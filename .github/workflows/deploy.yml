@@ -10,9 +10,12 @@ permissions:
   pages: write
   id-token: write
 
+# 同一時間只跑一個部署；後到的排隊等前一個跑完，而不是取消它。
+# 設成 true 時，push 自動部署跑到一半若又手動按 Run workflow，push 那次會被取消，
+# commit 旁邊就留下一個 ✗（2026-10-02 的 694e21a），雖然網站實際上已由後一次部署成功。
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:

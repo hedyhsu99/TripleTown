@@ -161,7 +161,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false   # 後到的部署排隊，不取消進行中的（true 會讓被取消的那次在 commit 旁留下 ✗）
 
 jobs:
   build:
