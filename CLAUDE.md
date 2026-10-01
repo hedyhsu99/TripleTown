@@ -26,7 +26,7 @@ npm run apk
 
 ## 專案背景
 
-仿製手機遊戲 **Triple Town** 的 Web 版。`src/picts/` 只放程式實際 import 的遊戲素材 PNG；原版參考截圖與 PSD 美術源檔放在 `art-reference/`（不參與建置）。目標是外觀盡量貼近原版，打包為 Android APK（Capacitor，✅）與 Windows EXE（Electron NSIS 安裝檔，✅）。
+仿製手機遊戲 **Triple Town** 的 Web 版。`src/picts/` 只放程式實際 import 的遊戲素材 PNG；原版參考截圖與 PSD 美術源檔放在 `art-reference/`（不參與建置）。目標是外觀盡量貼近原版，打包為 Android APK（Capacitor，✅）、Windows EXE（Electron NSIS 安裝檔，✅）與網頁版（GitHub Pages，✅）。
 
 ## Android APK 打包（Capacitor）
 
@@ -66,11 +66,31 @@ npm run electron   # 本機直接跑 Electron 視窗（開發測試用）
 
 **開發環境陷阱：** 在 VSCode / Claude Code 的終端機跑 `electron .` 會因繼承 `ELECTRON_RUN_AS_NODE=1` 而立刻閃退（`app` 為 undefined）。先執行 `Remove-Item Env:ELECTRON_RUN_AS_NODE` 再啟動。打包版不受影響（electron-builder 預設關閉 RunAsNode fuse，同時也會擋掉 `--remote-debugging-port` 等偵錯參數）。
 
+## 版本控制與網頁版部署（local / git / GitHub Pages）
+
+2026-10-01 起本目錄是 git repo，遠端 `https://github.com/hedyhsu99/TripleTown`（**公開**）。
+網頁版 https://hedyhsu99.github.io/TripleTown/ 由 `.github/workflows/deploy.yml` 在每次 push 到 `main` 時自動 `npm ci` → `npm run build` → 部署。
+
+| 產物 | 在哪建置 | 怎麼發佈 | 指令（Claude Code） |
+|------|---------|---------|-----------|
+| APK | 本機 | `release/` 手動傳到手機 | `/package apk` |
+| Windows EXE（local） | 本機 | `release/` 雙擊安裝 | `/package local` |
+| 網頁版 | GitHub Actions | `git push origin main` | `/package github` |
+
+**硬規則：**
+- **GitHub repo 只放原始碼**，不放 `dist/`、`release/`、APK、EXE（`.gitignore` 已擋）。網頁版**不可**在本機 build 後上傳——上傳的 `dist/index.html` 會蓋掉原始碼 `index.html`，Actions 從此建錯東西
+- **Pages 的 Source 必須是 "GitHub Actions"**，改成 "Deploy from a branch" 會發佈未建置的原始碼 → 白畫面
+- **push 是對外動作**（公開 repo），commit／push 前先給使用者看檔案清單並取得確認；**禁止 `--force`**，撤銷用 `git revert`
+- `art-reference/` 與 `*.psd` **刻意不進版控**（公開 repo 不放原版素材），使用者需自行另外備份；`src/picts/` 不放未使用的圖
+- 打包 APK／EXE 與 git 無關，不需要先 commit
+
+完整 SOP（含換電腦還原、備份清單、故障排除）見 `docs/Operations_Guide.md` 第 1、3、4 章與 `docs/Developer_Guideline.md` 第 3 章。
+
 ## 專案文件（docs/，依 AISDLC 範本撰寫）
 
 - `docs/srd/SRD_System_Architecture.md` — 系統架構（模組關係、placePiece 序列圖、資料模型、三平台建置管線）
 - `docs/Developer_Guideline.md` — 開發指引 SOP（環境設置、編碼規範、常見修改情境對照表、手動測試清單）
-- `docs/Operations_Guide.md` — 維運手冊 SOP（APK/EXE 發佈步驟、版本號同步、故障排除）
+- `docs/Operations_Guide.md` — 維運手冊 SOP（APK/EXE/網頁版發佈步驟、版本號同步、備份還原、故障排除）
 
 架構或流程改變時，需同步更新上述文件與本檔。
 

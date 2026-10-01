@@ -22,7 +22,7 @@
 cd d:\ClaudeLab\TripleTown
 npm install          # 安裝依賴（vue、capacitor、electron、vite）
 
-npm run dev          # 開發伺服器 http://localhost:5173
+npm run dev          # 開發伺服器 http://localhost:5177（不用 5173，見 vite.config.js 註解）
 npm run build        # 正式建置 → dist/
 npm run preview      # 預覽 build 結果
 npm run apk          # 一鍵建 Android APK → release/TripleTownCL-v1.0-debug.apk
@@ -85,37 +85,53 @@ npm run electron     # 本機直接開 Electron 視窗（開發測試用）
 
 ## 3. Git 工作流程
 
-> ⚠️ **現況：本專案目前不是 git repository**，所有刪改無法還原。建議儘早初始化：
+2026-10-01 起本專案為 git repository，遠端為 **https://github.com/hedyhsu99/TripleTown**（公開）。
+GitHub repo 有兩個用途：**原始碼備份**，以及**網頁版部署來源**（push 到 `main` 會由 GitHub Actions 自動建置並發佈到 GitHub Pages，詳見 [維運手冊第 1 章](Operations_Guide.md#1-部署程序)）。
+
+### 什麼進版控、什麼不進
+
+| 進版控 | 不進版控（`.gitignore`） | 不進的原因 |
+|--------|------------------------|-----------|
+| `src/`、`index.html`、`vite.config.js`、`package*.json` | `node_modules/`、`dist/` | 由 `npm install`／`npm run build` 重生 |
+| `android/`（原生專案設定） | `android/app/build/`、`android/.gradle/`、`android/app/src/main/assets/public/` 等 | Gradle 與 `cap sync` 的產物 |
+| | `android/local.properties` | 本機 SDK 路徑，每台電腦不同 |
+| `electron/`、`build/`（圖示、NSIS 設定）、`build-apk.cmd`、`capacitor.config.json` | `release/`、`*.apk`、`*.exe` | 建置產物；EXE 約 100MB 接近 GitHub 單檔上限 |
+| `docs/`、`CLAUDE.md`、`.claude/`、`.github/` | `art-reference/`、`*.psd` | 公開 repo 不放原版遊戲素材；**需自行另外備份**（見維運手冊第 3 章） |
+
+`src/picts/` 只放程式實際 `import` 的 PNG。不再使用的圖、備份圖（如 `bg_board_bk.png`）移到 `art-reference/`，不要留在 `src/`。
+
+### 日常流程（本機開發 → 版控 → 部署）
 
 ```bash
-cd d:\ClaudeLab\TripleTown
-git init
+npm run dev                   # 1. 本機開發、試玩
+npm run build                 # 2. 確認可建置
+git status                    # 3. 檢查改動清單
+git add -A
+git commit -m "功能：…"        # 4. 提交（存在本機）
+git push origin main          # 5. 推送 = 備份到 GitHub ＋ 自動更新網頁版
 ```
 
-建議的 `.gitignore`（依現有目錄結構）：
+- **commit 不等於備份**：commit 只存在本機 `.git/`，電腦壞了一樣沒了；**push 之後才在 GitHub 上**。告一段落就 push
+- **APK／EXE 與 git 無關**：`npm run apk`／`npm run exe` 隨時可在本機執行，不需要先 commit
+- Claude Code 裡可用 `/package github` 走完 2～5 步（會先列出檔案清單請你確認才 commit、push）
 
-```gitignore
-node_modules/
-dist/
-release/
-android/app/build/
-android/.gradle/
-android/local.properties    # 指向本機 SDK 路徑，勿提交
-```
+### 三條規則
 
-`art-reference/`（約 100MB 參考圖與 PSD）視需求決定是否納入版控。
+1. **不要在 GitHub 網頁上傳 build 產物**（`dist/` 內容、APK、EXE）——網頁版由 Actions 從原始碼建置，上傳的產物會蓋掉原始碼 `index.html` 導致部署出錯（細節見維運手冊）
+2. **在 GitHub 網頁上編輯過檔案，回本機前先 `git pull`**，否則下次 push 會被拒絕
+3. **不要 `git push --force`**——會改寫 GitHub 上的歷史，備份就不可信了；要撤銷改動用 `git revert`
 
 ### 分支策略
 
-單人專案，尚未定義分支策略；建議：`main` 保持可建置狀態，實驗性改動開 feature 分支。
+單人專案，直接在 `main` 開發；`main` 必須保持可建置狀態（每次 push 都會觸發部署）。實驗性改動可開 feature 分支，push feature 分支**不會**觸發部署（workflow 只監聽 `main`）。
 
 ### Commit 規範
 
-尚未定義；建議格式：`類型：簡述`（繁體中文），如 `功能：新增商店 Undo 商品`、`修正：忍者熊瞬移後困住判定`。
+格式：`類型：簡述`（繁體中文），如 `功能：新增商店 Undo 商品`、`修正：忍者熊瞬移後困住判定`、`文件：…`、`整理：…`。
 
 ### PR 流程
 
-不適用（單人專案、無遠端 repo）。
+不適用（單人專案，直接 push 到 `main`）。
 
 ---
 
@@ -145,7 +161,7 @@ android/local.properties    # 指向本機 SDK 路徑，勿提交
 
 ### 建置驗證
 
-- Web：`npm run build` 無錯誤、`npm run preview` 可玩
+- Web：`npm run build` 無錯誤、`npm run preview` 可玩；push 後確認 GitHub Actions 成功、https://hedyhsu99.github.io/TripleTown/ 可玩
 - APK：安裝到實機測試（全螢幕沉浸模式、觸控手感、切背景回血）
 - EXE：`npm run electron` 視窗正常（注意第 1 章的 `ELECTRON_RUN_AS_NODE` 陷阱）
 

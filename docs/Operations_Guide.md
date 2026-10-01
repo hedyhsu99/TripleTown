@@ -11,12 +11,59 @@
 
 | 環境 | 形式 | 產出 / 位置 |
 |------|------|------------|
-| 開發 | Vite dev server | `npm run dev` → http://localhost:5173 |
-| Web | 靜態檔案 | `npm run build` → `dist/`（可放任何 web server） |
-| Android | debug APK（試玩分發） | `release/TripleTownCL-v1.0-debug.apk`（約 6.4MB） |
-| Windows | NSIS 安裝檔 | `release/TripleTownCL-Setup-1.0.0.exe`（約 105MB） |
+| 開發 | Vite dev server | `npm run dev` → http://localhost:5177 |
+| Web（正式） | GitHub Pages，由 GitHub Actions 從原始碼建置 | https://hedyhsu99.github.io/TripleTown/ |
+| Android | debug APK（試玩分發） | `release/TripleTownCL-v1.0-debug.apk`（約 8MB） |
+| Windows | NSIS 安裝檔 | `release/TripleTownCL-Setup-1.0.0.exe`（約 100MB） |
+
+三種產物都來自同一次 `npm run build` 的 `dist/`，差別只在後續怎麼包裝。Claude Code 裡可直接用 `/package apk`、`/package local`（= Windows EXE）、`/package github`，流程定義在 `.claude/skills/package/SKILL.md`。
+
+### 三個「位置」的關係（local / git / 部署）
+
+```
+本機工作目錄 d:\ClaudeLab\TripleTown        ← 唯一的開發場所（改程式、打包 APK/EXE）
+   │  git commit                            ← 存進本機 .git（可還原的版本歷史）
+   ▼
+本機 git repo（.git/）
+   │  git push origin main                  ← 備份到 GitHub＋觸發網頁版部署
+   ▼
+GitHub repo  hedyhsu99/TripleTown          ← 只放原始碼，不放任何建置產物
+   │  GitHub Actions：npm ci → npm run build（.github/workflows/deploy.yml）
+   ▼
+GitHub Pages  hedyhsu99.github.io/TripleTown/   ← 網站內容 = Actions 建出的 dist/
+```
+
+| 產物 | 從哪裡發佈 | 跟 GitHub 有關嗎 |
+|------|-----------|-----------------|
+| APK / EXE | 本機 `release/` | **無關**。打包不需要先 commit，`release/` 也不進版控 |
+| 網頁版 | GitHub Actions | **只能**透過 push 更新，沒有其他路徑 |
 
 ### 部署步驟
+
+#### 網頁版 GitHub Pages（SOP）
+
+```bash
+npm run build                 # 1. 本機先建置一次，確認會過（CI 失敗比本機難查）
+git status                    # 2. 檢查要提交的檔案，不可出現 release/、dist/、*.apk、*.exe、*.psd
+git add -A
+git commit -m "功能：…"        # 3. 提交
+git push origin main          # 4. 推送 → 自動觸發 Actions「Deploy to GitHub Pages」
+```
+
+5. 到 https://github.com/hedyhsu99/TripleTown/actions 等 build、deploy 兩個 job 都打勾（約 1～2 分鐘）
+6. 開 https://hedyhsu99.github.io/TripleTown/ 確認。瀏覽器若仍顯示舊版，按 Ctrl+F5
+
+**GitHub 端的固定設定（已完成，不要改）**：Settings → Pages → Source = **GitHub Actions**。
+改回 "Deploy from a branch" 的話，Pages 會原樣發佈 repo 根目錄的原始碼 `index.html`（它引用 `/src/main.js`，瀏覽器無法執行）→ 白畫面。
+
+> ⚠️ **不要在 GitHub 網頁用「Add file → Upload files」上傳 build 產物**（2026-07 首次上架是這樣做的，已淘汰）：
+> 1. `dist/index.html` 會蓋掉根目錄的原始碼 `index.html`，之後 Actions 會拿成品當入口建置，網站不是 build 失敗就是永遠停在上傳的那版
+> 2. 根目錄會多出帶 hash 檔名的 `assets/`，每傳一次累積一組，Actions 根本不會用到
+> 3. 網頁上傳也是一個 commit，本機沒有，下次本機 push 會被拒絕（`! [rejected] … (fetch first)`），需先 `git pull`
+>
+> 在 GitHub 網頁上**編輯原始碼**（例如 README）是可以的，但回到本機改東西前要先 `git pull`。
+
+
 
 #### Android APK（SOP）
 
@@ -46,7 +93,8 @@ npm run exe        # = vite build → electron-builder --win
 
 ### 回滾程序
 
-- 無自動回滾機制。`release/` 內保留舊版安裝檔/APK 即為回滾手段：重新安裝舊版即可
+- **網頁版**：`git revert <有問題的 commit>` → `git push`，Actions 會自動以還原後的原始碼重新部署。**不要用 `git push --force` 改寫歷史**
+- **APK / EXE**：無自動回滾機制。`release/` 內保留舊版安裝檔/APK 即為回滾手段：重新安裝舊版即可；也可 `git checkout <舊 commit>` 後重新打包
 - 玩家資料存在裝置端 localStorage（金幣/最高分/排行榜），重裝**同一 appId** 的 APK 不會清除（除非使用者清除 App 資料）；Windows 版資料存於 Electron 使用者資料目錄，重裝亦保留
 
 ---
@@ -72,14 +120,32 @@ npm run exe        # = vite build → electron-builder --win
 
 ### 備份策略
 
-- **原始碼**：⚠️ 專案目前無 git 版控——這是最大風險。建議 `git init`（見開發指引第 3 章）或定期手動備份整個專案目錄
-- **美術源檔**：`art-reference/` 內的 PSD 是素材唯一可編輯來源，務必納入備份
-- **玩家資料**：localStorage 存於各玩家裝置，開發端無需備份
+2026-10-01 起原始碼納入 git，並推送到 GitHub（`hedyhsu99/TripleTown`，公開 repo）。
+
+| 項目 | 備份方式 | 不見的話 |
+|------|---------|---------|
+| 原始碼（`src/`、`android/`、`electron/`、`docs/`、設定檔） | **GitHub**（push 即備份） | `git clone` 取回。⚠️ 只有 **push 過**的版本；本機未 commit／未 push 的改動不在 GitHub 上 |
+| `art-reference/`（約 148MB 原版截圖與 PSD） | **刻意不進 git**（公開 repo 不放原版素材），需自行備份到 OneDrive／外接硬碟 | 若無另外備份則**無法恢復**——這是素材唯一可編輯來源 |
+| Android debug 簽章 `C:\Users\hedyh\.android\debug.keystore` | 不在 repo 內，建議另外備份 | 新簽章打的 APK 無法覆蓋安裝舊版，玩家須先移除舊版（**遊戲進度消失**） |
+| `release/`、`dist/`、`node_modules/`、`android/app/build/` | 不需備份 | 由 `npm run apk`／`npm run exe`／`npm run build`／`npm install` 重生 |
+| `android/local.properties` | 不需備份（本機路徑） | 手動建立，內容一行：`sdk.dir=d:\\ClaudeLab\\android-dev\\sdk` |
+| 玩家資料 | localStorage 存於各玩家裝置，開發端無需備份 | — |
 
 ### 恢復程序
 
-- 原始碼損毀：從備份還原；`node_modules/`、`dist/`、`android/app/build/` 可隨時由 `npm install` / `npm run build` / `npm run apk` 重生，不需備份
-- 玩家資料遺失（清除 App 資料/換機）：無雲端同步，無法恢復（已知限制）
+**原始碼遺失或換電腦**：
+
+```bash
+cd d:\ClaudeLab
+git clone https://github.com/hedyhsu99/TripleTown.git
+cd TripleTown
+npm install          # 重新下載套件
+npm run dev          # 可開始開發
+```
+
+要打包 APK 還需：可攜版工具（見下方「災難恢復」）＋手動建立 `android/local.properties`＋從備份放回 `art-reference/`（僅美術調整需要，不影響建置）。
+
+- 玩家資料遺失（清除 App 資料/換機）：無雲端同步，無法恢復（已知限制）。網頁版、APK、EXE 三者進度各自獨立，不互通
 
 ### 災難恢復
 
@@ -101,6 +167,9 @@ npm run exe        # = vite build → electron-builder --win
 | 遊戲沒有聲音 | 行動瀏覽器 AudioContext 需使用者互動後 resume | 已內建處理（`sfx.js` 自動 resume）；仍無聲檢查 Options → Sound 是否 Off |
 | 畫面出現紅色錯誤框 | runtime 錯誤被 crash overlay 攔截 | 截圖回報；框內含錯誤位置與 stack trace，點擊可關閉 |
 | 啟動時提示「上次遊戲疑似凍結」 | localStorage `tt_trace` 停在 `place-start`（上次落子邏輯未跑完） | 截圖回報 trace 內容；此為歷史凍結問題的診斷機制（root cause 未定論） |
+| 網頁版白畫面（GitHub Pages） | Pages 的 Source 被改回 "Deploy from a branch"，發佈的是未建置的原始碼 `index.html` | Settings → Pages → Source 改回 **GitHub Actions**，到 Actions 對「Deploy to GitHub Pages」按 Run workflow |
+| push 後網頁版沒更新 | Actions 執行失敗，或瀏覽器快取 | 看 Actions 頁面該次 run 的紅色步驟 log；成功的話按 Ctrl+F5 |
+| `git push` 被拒絕：`! [rejected] … (fetch first)` | GitHub 上有本機沒有的 commit（例如在網頁上編輯過檔案） | `git pull` 合併後再 push；**不要** `--force` |
 | 切背景很久回來步數沒回滿 | — | 屬正常設計外的異常：回血採牆上時鐘法，`visibilitychange` 會補算；若未補，檢查 WebView 是否被系統回收重啟 |
 
 ### 診斷工具
@@ -108,6 +177,8 @@ npm run exe        # = vite build → electron-builder --win
 - Web / Electron 開發：瀏覽器 DevTools（`npm run dev` 後 F12）
 - localStorage 檢視：DevTools → Application → Local Storage（key：`tripletown_coins`、`tripletown_best`、`tripletown_highscores`、`tt_trace`）
 - Android：`chrome://inspect` 可連 WebView（debug build）
+- 網頁版部署狀態：https://github.com/hedyhsu99/TripleTown/actions ；或不登入以 API 查最近一次 run：
+  `curl -s "https://api.github.com/repos/hedyhsu99/TripleTown/actions/runs?per_page=1"`（看 `status`／`conclusion`）
 
 ### 升級流程
 
@@ -124,11 +195,11 @@ npm run exe        # = vite build → electron-builder --win
 ### 版本更新
 
 - 依賴更新採保守策略（依賴極簡原則，見開發指引）；Capacitor / Electron 大版本升級前先確認 APK 與 EXE 建置管線可用
-- 發版 checklist：同步三處版本號（見第 1 章）→ `npm run apk` + `npm run exe` → 實機/本機試玩驗證 → 分發 `release/` 產物
+- 發版 checklist：同步三處版本號（見第 1 章）→ `npm run apk` + `npm run exe` → 實機/本機試玩驗證 → 分發 `release/` 產物 → commit＋push（同時更新網頁版與 GitHub 備份）
 
 ### 容量規劃
 
-不適用。產物大小參考：APK 約 6.4MB、EXE 安裝檔約 105MB（Electron runtime 佔大宗）。
+不適用。產物大小參考：APK 約 8MB、EXE 安裝檔約 100MB（Electron runtime 佔大宗）。GitHub 單檔上限 100MB，這也是 `release/` 不能進版控的原因之一。
 
 ---
 

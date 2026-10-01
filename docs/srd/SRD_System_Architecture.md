@@ -347,8 +347,8 @@ APP 版曾發生畫面凍結問題，因此內建三層診斷（皆為事實存�
 
 | 環境 | 啟動方式 | 說明 |
 |------|---------|------|
-| 開發 | `npm run dev` | Vite dev server，port 5173 |
-| Web 正式 | `npm run build` → `dist/` | 靜態檔案，可部署任何 web server |
+| 開發 | `npm run dev` | Vite dev server，port 5177 |
+| Web 正式 | `git push origin main` → GitHub Actions 建置 | GitHub Pages：https://hedyhsu99.github.io/TripleTown/ （`.github/workflows/deploy.yml`） |
 | Android | `npm run apk`（= `build-apk.cmd`） | 產出 `release/TripleTownCL-v1.0-debug.apk` |
 | Windows | `npm run exe` | 產出 `release/TripleTownCL-Setup-1.0.0.exe`（NSIS） |
 
@@ -360,9 +360,11 @@ flowchart LR
     DIST -->|"npx cap sync android"| CAP["android/app/src/main/assets/public/"]
     CAP -->|"gradlew assembleDebug<br/>（可攜版 JDK 21 + SDK 36）"| APK["release/*.apk"]
     DIST -->|"electron-builder --win<br/>（NSIS oneClick、per-user）"| EXE["release/*-Setup-*.exe"]
+    SRC -->|"git push → GitHub Actions<br/>npm ci + vite build"| PAGES["GitHub Pages"]
 ```
 
-- APK 與 EXE 產出統一放 `release/` 目錄（勿提交版控）
+- APK 與 EXE 在本機建置，產出統一放 `release/` 目錄（勿提交版控）
+- 網頁版**不在本機建置後上傳**：GitHub repo 只放原始碼，由 Actions 在雲端重新 build 後發佈。Pages 的 Source 必須設為 "GitHub Actions"（設為 branch 會發佈未建置的原始碼 → 白畫面）。CI 設 `ELECTRON_SKIP_BINARY_DOWNLOAD=1` 略過 Electron 執行檔下載
 - Android 建置不需 Android Studio：可攜版工具在 `d:\ClaudeLab\android-dev\`（JDK 21 Temurin、SDK platforms;android-36、build-tools;36.0.0），`android/local.properties` 指向 SDK 位置（勿提交版控）
 - `vite.config.js` 的 `base: './'` 為三平台共用的關鍵設定（Electron `file://` 載入必要；Capacitor 與 Web 不受影響）
 
@@ -378,7 +380,7 @@ flowchart LR
 
 ## 9. 技術債與限制 (Technical Debt & Limitations)
 
-- **無版本控制**：專案目錄不是 git repository，檔案刪改無法還原（建議 `git init`，見開發指引）
+- **美術源檔未進版控**：原始碼已於 2026-10-01 納入 git 並推送 GitHub，但 `art-reference/`（PSD 源檔）刻意排除於公開 repo，需另行備份
 - **無自動化測試**：無單元測試/E2E；驗證靠手動試玩（測試 SOP 見開發指引第 4 章）
 - **APK 僅 debug 簽章**：debug keystore 只供試玩分發；上架 Google Play 需另做 release keystore + `assembleRelease`
 - **Android 圖示與啟動畫面**：仍為 Capacitor 預設圖示（Windows 版已用 `build/icon.png`）

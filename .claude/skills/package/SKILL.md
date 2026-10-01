@@ -114,6 +114,9 @@ test -f .gitignore && echo ok
 
 ### 一次性設定（前置檢查不通過時）
 
+> ✅ **已於 2026-10-01 完成**（commit `42a9aff`）。正常情況前置檢查會通過、不會走到這裡。
+> 會走到這裡的情境只剩「換電腦後沒有用 `git clone` 而是複製資料夾」——此時優先改用 `git clone`（見 `docs/Operations_Guide.md` 第 3 章），不要重做下面的步驟。
+
 本機資料夾原本不是 git repo，GitHub 上的 TripleTown 只有一次網頁上傳的舊 build（2026-07-02 的 `index.html` + `assets/`）。設定目標：**原始碼進版控，Pages 改由 Actions 從原始碼 build**。
 
 **動手前先問使用者兩件事**（不要自行決定）：
