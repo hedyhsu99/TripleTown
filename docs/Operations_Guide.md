@@ -133,7 +133,27 @@ npm run exe        # = vite build → electron-builder --win
 
 ### 恢復程序
 
-**原始碼遺失或換電腦**：
+**情況 A：部分檔案不見或改壞了（專案資料夾和 `.git/` 都還在）**——不需要 clone，從本機 git 還原即可：
+
+```bash
+cd d:\ClaudeLab\TripleTown
+git status                         # 先看哪些檔案被刪（D）或修改（M）
+
+git restore src                    # 還原整個 src/ 到最後一次 commit 的狀態
+git restore src/game/useGame.js    # 或只還原單一檔案
+```
+
+⚠️ `git restore` 會**丟掉該檔案尚未 commit 的修改**，還原前確認那些修改不要了。
+
+**情況 B：刪除已經 commit 了**（例如刪了檔案、commit、甚至 push 之後才發現）：
+
+```bash
+git log --oneline -- src/game/useGame.js       # 找出檔案還在的最後一個 commit，例如 42a9aff
+git restore --source=42a9aff src/game/useGame.js
+git commit -m "修正：還原誤刪的 useGame.js"
+```
+
+**情況 C：整個專案資料夾不見，或換電腦**（`.git/` 也沒了，只能從 GitHub 取回）：
 
 ```bash
 cd d:\ClaudeLab
