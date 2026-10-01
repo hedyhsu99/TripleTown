@@ -2,16 +2,16 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- viewport-fit=cover：讓內容延伸到整個螢幕（含瀏海/系統列區域），
+         Capacitor 的 SystemBars 外掛會檢查此宣告，缺少時會自動加安全區邊距（上方白邊的元兇） -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Triple Town CL</title>
-    <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { background: #2d1b00; }
-    </style>
-    <script type="module" crossorigin src="/assets/index-BTlWxGHZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-nTCNWuEU.css">
+    <!-- 注意：不要在此放 <style> 區塊——vite 的 html-proxy 外掛有競態 bug，
+         會偶發 "No matching HTML proxy module found" 導致 build 失敗。
+         全域樣式在 App.vue，首繪背景色用 body 屬性即可。 -->
   </head>
-  <body>
+  <body style="background: #2d1b00; margin: 0">
     <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

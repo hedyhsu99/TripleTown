@@ -1,0 +1,18 @@
+node_modules/
+dist/
+release/
+*.apk
+*.exe
+*.psd
+.vscode/
+
+# 原版截圖與 PSD 美術源檔：不參與 build，且公開 repo 不放原版遊戲素材（只存本機）
+art-reference/
+
+# Android：產物與本機路徑（android/.gitignore 另有細項）
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/public/
+android/capacitor-cordova-android-plugins/build/

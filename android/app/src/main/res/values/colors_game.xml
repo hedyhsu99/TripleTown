@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 遊戲背景深綠：window 背景用，避免任何縫隙露白 -->
+    <color name="gameBackground">#3a5230</color>
+</resources>

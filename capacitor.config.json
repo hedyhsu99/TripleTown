@@ -1,0 +1,15 @@
+{
+  "appId": "tw.hedy.tripletown",
+  "appName": "TripleTown",
+  "webDir": "dist",
+  "backgroundColor": "#3a5230",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "hidden": true,
+      "insetsHandling": "disable"
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "triple-town-cl",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "apk": "build-apk.cmd",
+    "exe": "npm run build && electron-builder --win",
+    "electron": "npm run build && electron ."
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/status-bar": "^8.0.2",
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
+    "vite": "^5.2.0"
+  },
+  "build": {
+    "appId": "tw.hedy.tripletown",
+    "productName": "Triple Town CL",
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US",
+      "zh-TW"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "!node_modules/**"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "TripleTownCL-Setup-${version}.exe",
+      "shortcutName": "Triple Town CL",
+      "uninstallDisplayName": "Triple Town CL",
+      "include": "build/installer.nsh"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TripleTown</string>
+    <string name="title_activity_main">TripleTown</string>
+    <string name="package_name">tw.hedy.tripletown</string>
+    <string name="custom_url_scheme">tw.hedy.tripletown</string>
+</resources>
